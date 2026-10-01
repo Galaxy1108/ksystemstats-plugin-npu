@@ -1,0 +1,21 @@
+# Grant the "intelpmt" group read access to the Intel NPU's PMT telemetry
+# block, so NPU power and temperature can be read without root.
+#
+# The kernel hardcodes the telem attribute to 0440 root:root (see
+# drivers/platform/x86/intel/pmt/class.c), so the group already has read
+# permission -- we only need to change which group owns it.
+#
+# Matched by GUID rather than by block name, because the telemN numbering
+# is not stable across platforms. 0x130670b2 is the Meteor Lake NPU
+# telemetry GUID (see Intel's npu-monitor-tool: PMT_GUID_MTL).
+#
+# After installing this rule, reload it with:
+#   sudo udevadm control --reload
+#   sudo udevadm trigger --subsystem-match=intel_pmt
+#
+# You must also create the group and add yourself to it, then log out and
+# back in for the new group membership to take effect:
+#   sudo groupadd -r intelpmt
+#   sudo usermod -aG intelpmt $USER
+
+SUBSYSTEM=="intel_pmt", ATTR{guid}=="0x130670b2", RUN+="/bin/chgrp intelpmt /sys%p/telem"
