@@ -15,12 +15,32 @@ mainline `intel_vpu` kernel driver.
 |---|---|---|
 | Utilization | % | Share of time the NPU spent executing jobs |
 | Frequency | MHz | Current NPU clock. Reports `0` while idle, since the clock is gated |
+| Minimum Frequency | MHz | Lowest frequency the hardware supports |
+| Efficient Frequency | MHz | Most power-efficient operating point |
+| Maximum Frequency | MHz | Highest frequency the hardware supports |
 | Memory | bytes | NPU memory currently in use |
+| Scheduler Mode | `HW` / `OS` | Whether jobs are scheduled by the hardware or by the OS |
+| Power State | `D0` / `D3hot` | `D0` while the NPU is active, `D3hot` when idle |
 
 They appear in System Monitor under **NPU → Intel NPU 0**.
 
-The driver exposes a few more attributes that are not wired up yet — `sched_mode`, `power_state`
-and the frequency limits under `freq/`. Contributions are welcome.
+Observed on a Core Ultra 5 125H (Meteor Lake) — idle versus under load:
+
+```
+idle                          under load
+powerState = D3hot            powerState = D0
+frequency  = 0                frequency  = 700
+busy       = 0                busy       = 9.55
+memory     = 68722688         memory     = 81399808
+
+frequencyMin       = 333      (constant)
+frequencyEfficient = 700      (constant)
+frequencyMax       = 1400     (constant)
+schedulerMode      = HW       (constant)
+```
+
+Sensors whose backing attribute is missing are skipped, so the plugin degrades gracefully on
+kernels that do not expose all of them.
 
 ## Requirements
 

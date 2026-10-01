@@ -10,6 +10,10 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QStringList>
+#include <QVariant>
+
+#include <functional>
 
 #include <systemstats/SensorContainer.h>
 #include <systemstats/SensorObject.h>
@@ -19,6 +23,58 @@
 namespace
 {
 constexpr auto AccelRoot = "/sys/class/accel";
+
+/**
+ * 返回第一个存在的路径，都不存在时返回空。
+ * 部分属性在内核版本之间改过名字，这里做兼容。
+ */
+QString firstExisting(const QStringList &candidates)
+{
+    for (const auto &path : candidates) {
+        if (QFile::exists(path)) {
+            return path;
+        }
+    }
+    return {};
+}
+
+/**
+ * 只有属性文件确实存在时才创建传感器，这样在不支持某些属性的平台上可以优雅降级。
+ */
+KSysGuard::SysFsSensor *addNumericSensor(KSysGuard::SensorObject *object,
+                                         const QString &id,
+                                         const QString &name,
+                                         const QString &path,
+                                         KSysGuard::Unit unit)
+{
+    if (path.isEmpty() || !QFile::exists(path)) {
+        return nullptr;
+    }
+
+    auto *sensor = new KSysGuard::SysFsSensor(id, path, object);
+    sensor->setName(name);
+    sensor->setShortName(i18nc("@title", "NPU"));
+    sensor->setUnit(unit);
+    return sensor;
+}
+
+/**
+ * 字符串型传感器，用于 sched_mode、power_state 这类非数值属性。
+ */
+KSysGuard::SysFsSensor *addStringSensor(KSysGuard::SensorObject *object,
+                                        const QString &id,
+                                        const QString &name,
+                                        const QString &path)
+{
+    auto *sensor = addNumericSensor(object, id, name, path, KSysGuard::UnitNone);
+    if (sensor) {
+        sensor->setVariantType(QVariant::String);
+        sensor->setConvertFunction([](const QByteArray &data) {
+            return QVariant(QString::fromLatin1(data.trimmed()));
+        });
+    }
+    return sensor;
+}
 }
 
 /**
@@ -126,23 +182,36 @@ NpuPlugin::NpuPlugin(QObject *parent, const QVariantList &args)
         d->container->addObject(object);
 
         // 注意：SensorProperty / SysFsSensor 的构造函数在传入 SensorObject 作为 parent 时
-        // 会自动把自己注册到该对象上，所以这里不能再调用 addProperty()，
-        // 否则会触发 "already contains a property with that ID, overwriting" 警告。
+        // 会自动把自己注册到该对象上，所以这里不能再调用 addProperty()。
         new NpuUtilizationSensor(base + QStringLiteral("/npu_busy_time_us"), object);
 
-        auto *frequency = new KSysGuard::SysFsSensor(QStringLiteral("frequency"),
-                                                     base + QStringLiteral("/npu_current_frequency_mhz"),
-                                                     object);
-        frequency->setName(i18nc("@title", "Frequency"));
-        frequency->setShortName(i18nc("@title", "NPU"));
-        frequency->setUnit(KSysGuard::UnitMegaHertz);
+        addNumericSensor(object, QStringLiteral("frequency"), i18nc("@title", "Frequency"),
+                         firstExisting({base + QStringLiteral("/freq/current_freq"),
+                                        base + QStringLiteral("/npu_current_frequency_mhz")}),
+                         KSysGuard::UnitMegaHertz);
 
-        auto *memory = new KSysGuard::SysFsSensor(QStringLiteral("memory"),
-                                                  base + QStringLiteral("/npu_memory_utilization"),
-                                                  object);
-        memory->setName(i18nc("@title", "Memory"));
-        memory->setShortName(i18nc("@title", "NPU"));
-        memory->setUnit(KSysGuard::UnitByte);
+        addNumericSensor(object, QStringLiteral("frequencyMin"), i18nc("@title", "Minimum Frequency"),
+                         base + QStringLiteral("/freq/hw_min_freq"),
+                         KSysGuard::UnitMegaHertz);
+
+        addNumericSensor(object, QStringLiteral("frequencyEfficient"), i18nc("@title", "Efficient Frequency"),
+                         base + QStringLiteral("/freq/hw_efficient_freq"),
+                         KSysGuard::UnitMegaHertz);
+
+        addNumericSensor(object, QStringLiteral("frequencyMax"), i18nc("@title", "Maximum Frequency"),
+                         firstExisting({base + QStringLiteral("/freq/hw_max_freq"),
+                                        base + QStringLiteral("/npu_max_frequency_mhz")}),
+                         KSysGuard::UnitMegaHertz);
+
+        addNumericSensor(object, QStringLiteral("memory"), i18nc("@title", "Memory"),
+                         base + QStringLiteral("/npu_memory_utilization"),
+                         KSysGuard::UnitByte);
+
+        addStringSensor(object, QStringLiteral("schedulerMode"), i18nc("@title", "Scheduler Mode"),
+                        base + QStringLiteral("/sched_mode"));
+
+        addStringSensor(object, QStringLiteral("powerState"), i18nc("@title", "Power State"),
+                        base + QStringLiteral("/power_state"));
 
         ++index;
     }
