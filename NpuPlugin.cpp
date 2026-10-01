@@ -372,6 +372,10 @@ NpuPlugin::NpuPlugin(QObject *parent, const QVariantList &args)
     : SensorPlugin(parent, args)
     , d(std::make_unique<Private>())
 {
+    // 插件在 ksystemstats 加载时就要构造出带名字的传感器，
+    // 这里确保翻译域已就绪，否则每个 i18nc 都会打一条 "Domain is not set" 警告。
+    KLocalizedString::setApplicationDomain("ksystemstats");
+
     d->container = std::make_unique<KSysGuard::SensorContainer>(QStringLiteral("npu"), i18nc("@title", "NPU"), this);
 
     const QDir accelDir(QString::fromLatin1(AccelRoot));
