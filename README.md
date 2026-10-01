@@ -186,6 +186,47 @@ sudo setpriv --reuid=$(id -u) --regid=$(id -g) --groups=$(getent group intelpmt 
     QT_FORCE_STDERR_LOGGING=1 ./build/loadtest
 ```
 
+## Translations
+
+The plugin uses its own translation domain, `ksystemstats_plugin_npu`, rather than KDE's shared
+`ksystemstats_plugins` catalogue. That is deliberate: KDE translates `"Power"` as 电源 (power
+supply), which is wrong for the wattage sensor here.
+
+Chinese (Simplified) is included in `po/zh_CN.po` and installed automatically:
+
+| Sensor | 中文 |
+|---|---|
+| Utilization | 利用率 |
+| Frequency | 频率 |
+| Minimum / Efficient / Maximum Frequency | 最低频率 / 能效频率 / 最高频率 |
+| Memory | 内存 |
+| Scheduler Mode | 调度模式 |
+| Power State | 电源状态 |
+| Temperature | 温度 |
+| Power | 功耗 |
+| Voltage (raw) | 电压（原始值） |
+
+Sensor names are looked up through `i18ndc()` with the domain passed explicitly, so loading this
+plugin never changes the translation domain of the process and cannot affect KDE's own plugins.
+
+Adding another language:
+
+```bash
+cp po/ksystemstats_plugin_npu.pot po/<lang>.po
+# ... 翻译后校验
+msgfmt --check po/<lang>.po
+```
+
+Every `po/*.po` is compiled during the build and installed to
+`/usr/share/locale/<lang>/LC_MESSAGES/ksystemstats_plugin_npu.mo`.
+
+Regenerating the template after changing sensor strings:
+
+```bash
+xgettext --language=C++ --keyword=i18ndc:2c,3 --keyword=i18ndc:2c,3,4 \
+    --from-code=UTF-8 -o po/ksystemstats_plugin_npu.pot NpuPlugin.cpp
+```
+
 ## License
 
 LGPL-2.0-or-later

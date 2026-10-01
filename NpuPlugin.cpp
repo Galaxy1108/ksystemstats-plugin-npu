@@ -27,6 +27,11 @@ namespace
 constexpr auto AccelRoot = "/sys/class/accel";
 constexpr auto PmtRoot = "/sys/class/intel_pmt";
 
+// 本插件自己的翻译域。
+// 刻意不复用 KDE 的 "ksystemstats_plugins"：那边把 "Power" 译作「电源」（供电），
+// 而我们的同名传感器指的是「功耗」，会译错。
+constexpr auto NpuDomain = "ksystemstats_plugin_npu";
+
 /**
  * 返回第一个存在的路径，都不存在时返回空。
  * 部分属性在内核版本之间改过名字，这里做兼容。
@@ -56,7 +61,7 @@ KSysGuard::SysFsSensor *addNumericSensor(KSysGuard::SensorObject *object,
 
     auto *sensor = new KSysGuard::SysFsSensor(id, path, object);
     sensor->setName(name);
-    sensor->setShortName(i18nc("@title", "NPU"));
+    sensor->setShortName(i18ndc(NpuDomain, "@title", "NPU"));
     sensor->setUnit(unit);
     return sensor;
 }
@@ -275,7 +280,7 @@ public:
         , m_reader(std::move(reader))
         , m_getter(std::move(getter))
     {
-        setShortName(i18nc("@title", "NPU"));
+        setShortName(i18ndc(NpuDomain, "@title", "NPU"));
         setUnit(unit);
         setDescription(description);
     }
@@ -308,14 +313,14 @@ class NpuUtilizationSensor : public KSysGuard::SensorProperty
     Q_OBJECT
 public:
     NpuUtilizationSensor(const QString &path, KSysGuard::SensorObject *parent)
-        : SensorProperty(QStringLiteral("busy"), i18nc("@title", "Utilization"), parent)
+        : SensorProperty(QStringLiteral("busy"), i18ndc(NpuDomain, "@title", "Utilization"), parent)
         , m_path(path)
     {
-        setShortName(i18nc("@title", "NPU"));
+        setShortName(i18ndc(NpuDomain, "@title", "NPU"));
         setUnit(KSysGuard::UnitPercent);
         setMin(0);
         setMax(100);
-        setDescription(i18nc("@info", "Time the NPU spent executing jobs, as a percentage of the sampling interval."));
+        setDescription(i18ndc(NpuDomain, "@info", "Time the NPU spent executing jobs, as a percentage of the sampling interval."));
         m_timer.start();
     }
 
@@ -372,11 +377,7 @@ NpuPlugin::NpuPlugin(QObject *parent, const QVariantList &args)
     : SensorPlugin(parent, args)
     , d(std::make_unique<Private>())
 {
-    // 插件在 ksystemstats 加载时就要构造出带名字的传感器，
-    // 这里确保翻译域已就绪，否则每个 i18nc 都会打一条 "Domain is not set" 警告。
-    KLocalizedString::setApplicationDomain("ksystemstats");
-
-    d->container = std::make_unique<KSysGuard::SensorContainer>(QStringLiteral("npu"), i18nc("@title", "NPU"), this);
+    d->container = std::make_unique<KSysGuard::SensorContainer>(QStringLiteral("npu"), i18ndc(NpuDomain, "@title", "NPU"), this);
 
     const QDir accelDir(QString::fromLatin1(AccelRoot));
     if (!accelDir.exists()) {
@@ -396,58 +397,58 @@ NpuPlugin::NpuPlugin(QObject *parent, const QVariantList &args)
         }
 
         auto *object = new KSysGuard::SensorObject(QStringLiteral("npu%1").arg(index),
-                                                   i18nc("@title", "Intel NPU %1", index));
+                                                   i18ndc(NpuDomain, "@title", "Intel NPU %1", index));
         d->container->addObject(object);
 
         // 注意：SensorProperty / SysFsSensor 的构造函数在传入 SensorObject 作为 parent 时
         // 会自动把自己注册到该对象上，所以这里不能再调用 addProperty()。
         new NpuUtilizationSensor(base + QStringLiteral("/npu_busy_time_us"), object);
 
-        addNumericSensor(object, QStringLiteral("frequency"), i18nc("@title", "Frequency"),
+        addNumericSensor(object, QStringLiteral("frequency"), i18ndc(NpuDomain, "@title", "Frequency"),
                          firstExisting({base + QStringLiteral("/freq/current_freq"),
                                         base + QStringLiteral("/npu_current_frequency_mhz")}),
                          KSysGuard::UnitMegaHertz);
 
-        addNumericSensor(object, QStringLiteral("frequencyMin"), i18nc("@title", "Minimum Frequency"),
+        addNumericSensor(object, QStringLiteral("frequencyMin"), i18ndc(NpuDomain, "@title", "Minimum Frequency"),
                          base + QStringLiteral("/freq/hw_min_freq"),
                          KSysGuard::UnitMegaHertz);
 
-        addNumericSensor(object, QStringLiteral("frequencyEfficient"), i18nc("@title", "Efficient Frequency"),
+        addNumericSensor(object, QStringLiteral("frequencyEfficient"), i18ndc(NpuDomain, "@title", "Efficient Frequency"),
                          base + QStringLiteral("/freq/hw_efficient_freq"),
                          KSysGuard::UnitMegaHertz);
 
-        addNumericSensor(object, QStringLiteral("frequencyMax"), i18nc("@title", "Maximum Frequency"),
+        addNumericSensor(object, QStringLiteral("frequencyMax"), i18ndc(NpuDomain, "@title", "Maximum Frequency"),
                          firstExisting({base + QStringLiteral("/freq/hw_max_freq"),
                                         base + QStringLiteral("/npu_max_frequency_mhz")}),
                          KSysGuard::UnitMegaHertz);
 
-        addNumericSensor(object, QStringLiteral("memory"), i18nc("@title", "Memory"),
+        addNumericSensor(object, QStringLiteral("memory"), i18ndc(NpuDomain, "@title", "Memory"),
                          base + QStringLiteral("/npu_memory_utilization"),
                          KSysGuard::UnitByte);
 
-        addStringSensor(object, QStringLiteral("schedulerMode"), i18nc("@title", "Scheduler Mode"),
+        addStringSensor(object, QStringLiteral("schedulerMode"), i18ndc(NpuDomain, "@title", "Scheduler Mode"),
                         base + QStringLiteral("/sched_mode"));
 
-        addStringSensor(object, QStringLiteral("powerState"), i18nc("@title", "Power State"),
+        addStringSensor(object, QStringLiteral("powerState"), i18ndc(NpuDomain, "@title", "Power State"),
                         base + QStringLiteral("/power_state"));
 
         // 功耗和温度走 PMT。读不到就整个跳过 —— 没有配置授权时插件照常工作。
         if (auto reader = NpuPmtReader::create()) {
             d->pmtReaders.append(reader);
 
-            new NpuPmtSensor(QStringLiteral("temperature"), i18nc("@title", "Temperature"),
+            new NpuPmtSensor(QStringLiteral("temperature"), i18ndc(NpuDomain, "@title", "Temperature"),
                              KSysGuard::UnitCelsius,
-                             i18nc("@info", "NPU temperature reported through Intel PMT telemetry."),
+                             i18ndc(NpuDomain, "@info", "NPU temperature reported through Intel PMT telemetry."),
                              reader, [reader] { return reader->temperature(); }, object);
 
-            new NpuPmtSensor(QStringLiteral("power"), i18nc("@title", "Power"),
+            new NpuPmtSensor(QStringLiteral("power"), i18ndc(NpuDomain, "@title", "Power"),
                              KSysGuard::UnitWatt,
-                             i18nc("@info", "NPU power consumption, derived from the PMT energy counter."),
+                             i18ndc(NpuDomain, "@info", "NPU power consumption, derived from the PMT energy counter."),
                              reader, [reader] { return reader->power(); }, object);
 
-            new NpuPmtSensor(QStringLiteral("voltage"), i18nc("@title", "Voltage (raw)"),
+            new NpuPmtSensor(QStringLiteral("voltage"), i18ndc(NpuDomain, "@title", "Voltage (raw)"),
                              KSysGuard::UnitNone,
-                             i18nc("@info", "Raw PMT voltage field. No public conversion to volts is documented."),
+                             i18ndc(NpuDomain, "@info", "Raw PMT voltage field. No public conversion to volts is documented."),
                              reader, [reader] { return reader->voltage(); }, object);
         }
 

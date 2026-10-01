@@ -1,0 +1,104 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-01 17:03+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "NPU"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Utilization"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@info"
+msgid ""
+"Time the NPU spent executing jobs, as a percentage of the sampling interval."
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Intel NPU %1"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Frequency"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Minimum Frequency"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Efficient Frequency"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Maximum Frequency"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Memory"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Scheduler Mode"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Power State"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Temperature"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@info"
+msgid "NPU temperature reported through Intel PMT telemetry."
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Power"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@info"
+msgid "NPU power consumption, derived from the PMT energy counter."
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@title"
+msgid "Voltage (raw)"
+msgstr ""
+
+#: NpuPlugin.cpp
+msgctxt "@info"
+msgid "Raw PMT voltage field. No public conversion to volts is documented."
+msgstr ""
